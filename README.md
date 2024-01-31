@@ -1,0 +1,2 @@
+# zmake
+我去，JAVASCIRPT SCRIPT
