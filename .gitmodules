@@ -1,0 +1,15 @@
+[submodule "library/quickjspp"]
+	path = library/quickjspp
+	url = https://github.com/ftk/quickjspp
+[submodule "library/quickjs"]
+	path = library/quickjs
+	url = https://github.com/bellard/quickjs
+[submodule "library/expected"]
+	path = library/expected
+	url = https://github.com/TartanLlama/expected
+[submodule "library/spdlog"]
+	path = library/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "library/fmtlib"]
+	path = library/fmtlib
+	url = https://github.com/fmtlib/fmt

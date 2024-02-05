@@ -1,0 +1,4 @@
+
+${define MOE_ORG_ZMAKE_ENABLE_QUICKJS}
+${define MOE_ORG_ZMAKE_ENABLE_V8}
+

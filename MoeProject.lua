@@ -1,18 +1,32 @@
 local project = {}
 
-function project.setup(arg)
-    -- make command.json
-    vim.fn.system({
-        "ln",
-        "-f",
-        "-s",
-        "build/compile_commands.json",
-        "compile_commands.json"
-    })
+project.capabilities = nil
 
+function project.update()
+    -- generate compile_commands.json
+     vim.fn.system({
+        "xmake",
+        "project",
+        "-k",
+        "compile_commands",
+        "."
+    })
+end
+
+function project.setup(arg)
+    -- set up for clang
+    project.capabilities = arg.capabilities
+    project.update()
+
+    vim.fn.system({
+        "xmake",
+        "f",
+        "--toolchain=clang",
+        "-c"
+    })
     -- configure
     require("lspconfig").clangd.setup({
-        capabilities = arg.capabilities,
+        capabilities = project.capabilities,
         filetypes =  { "cpp","c","h","hpp","cppm"},
     })
 end
