@@ -1,0 +1,19 @@
+[package]
+name = "zmake_lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+v8 = "0.105.0"
+# quickjs_runtime = {git="https://github.com/HiRoFa/quickjs_es_runtime", features=["console", "setimmediate", "setinterval", "settimeout","quickjs-ng"], default-features=false}
+swc_common = { version = "0.37.5",features=["tty-emitter"] }
+swc = "0.285.0"
+serde = "1.0.210"
+serde_json = "1.0.127"
+log = "0.4.22"
+thiserror = "1.0.63"
+url = "2.5.2"
+priority-queue = "2.1.1"
+
+[profile.release]
+# strip = true
