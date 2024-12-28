@@ -78,8 +78,8 @@ impl Transformer{
             log::trace!("using config {}", cfg_json);
 
             let cfg = serde_json::from_str(cfg_json.as_str())
-                .map_err(|e| Error::TransformeError { 
-                    script:Script::from_ecmascript(cfg_json,String::from("the buillt-in swc configuration of zmake")),
+                .map_err(|e| Error::TransformeError {
+                    script:Script::from_ecmascript(Some(cfg_json),None),
                     reason: e.to_string()
                  })?;
 
