@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 zmake_lib = { path = "../zmake_lib" }
+
+[profile.release]
+strip = true
+lto = true

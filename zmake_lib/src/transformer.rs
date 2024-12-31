@@ -38,7 +38,7 @@ impl Transformer{
                 .source_map
                 .new_source_file(
                     FileName::Custom(script.path.as_ref().unwrap().clone()).into(),
-                    script.text.clone());
+                    script.get_text());
 
             let cfg_json = format!(
                 r#"
@@ -75,8 +75,6 @@ impl Transformer{
 
         "#);
 
-            log::trace!("using config {}", cfg_json);
-
             let cfg = serde_json::from_str(cfg_json.as_str())
                 .map_err(|e| Error::TransformeError {
                     script:Script::from_ecmascript(Some(cfg_json),None),
@@ -91,7 +89,7 @@ impl Transformer{
             let res = self.compiler.process_js_file(fm, &handler, &ops);
 
             match res {
-                Ok(to) => Ok(script.to_ecmascript(to.code,to.map)),
+                Ok(to) => Ok(script.to_transformed(to.code,to.map)),
                 Err(e) => Err(Error::TransformeError { 
                     script:script,
                     reason: e.to_string()

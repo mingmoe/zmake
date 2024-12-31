@@ -1,70 +1,65 @@
-use crate::Script;
-use url::{Url, Host, Position};
-use priority_queue::PriorityQueue;
+use crate::{Script, ValueWithPriority};
+use std::fs;
 use std::path::PathBuf;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 
-static DEFAULT_MODULE_DIRECTORY: &str = "modules";
+pub static DEFAULT_MODULE_DIRECTORY: &str = "modules";
 
-#[derive(Clone,PartialEq,Eq)]
-pub struct ModuleRequest{
-    pub specific:String,
-    pub module_uri:String,
+#[derive(Debug,Clone)]
+pub struct ModuleFinder{
+    /// make sure they are absolutely path
+    search_path:BinaryHeap<ValueWithPriority<String>>,
+    suffixes:BinaryHeap<ValueWithPriority<String>>
 }
 
-impl ModuleRequest{
-    pub fn new(specific:String,module_uri:String) -> ModuleRequest{
-        ModuleRequest{
-            specific,
-            module_uri
-        }
-    }
-}
-
-pub struct ModuleMap{
-    target:ModuleRequest,
-    dependencies:Vec<ModuleRequest>
-}
-
-pub trait ModuleLoader{
-    fn resolve(&self,requester:Option<Script>,specific:String) -> Result<ModuleRequest,crate::error::Error>;
-    fn load(&self,request:ModuleRequest) -> Result<Script,crate::error::Error>;
-}
-
-pub struct StandardModuleLoader{
-    search_path:PriorityQueue<String,i64>,
-    suffixes:PriorityQueue<String,i64>
-}
-
-impl StandardModuleLoader{
-    pub fn new(home_directory:String) -> StandardModuleLoader{
-        let mut paths : PriorityQueue<String,i64> = PriorityQueue::new();
+impl ModuleFinder{
+    pub fn new(home_directory:String) -> ModuleFinder{
+        let mut paths : BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
         let home = PathBuf::from(home_directory).canonicalize().unwrap();
         
-        paths.push(home.join(DEFAULT_MODULE_DIRECTORY).into_os_string().into_string().unwrap(),100);
+        paths.push(ValueWithPriority::new(home.join(DEFAULT_MODULE_DIRECTORY).into_os_string().into_string().unwrap(),0));
 
-        let mut suffixes : PriorityQueue<String,i64> = PriorityQueue::new();
-        suffixes.push( ".ts".to_string(),100);
-        suffixes.push( ".mts".to_string(),90);
-        suffixes.push( ".js".to_string(),80);
-        suffixes.push( ".mts".to_string(),70);
+        let mut suffixes : BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
+        suffixes.push(ValueWithPriority::new(".ts".to_string(),100));
+        suffixes.push(ValueWithPriority::new( ".mts".to_string(),90));
+        suffixes.push(ValueWithPriority::new( ".js".to_string(),80));
+        suffixes.push( ValueWithPriority::new(".mts".to_string(),70));
 
-        return StandardModuleLoader{
+        return ModuleFinder{
             search_path: paths,
             suffixes
         }
     }
-}
 
-impl ModuleLoader for StandardModuleLoader{
-    
-    fn resolve(&self,requester:Option<Script>,specific:String) -> Result<ModuleRequest,crate::error::Error>{
+    pub fn find(&self,current_directory:Option<String>,request:String)->Option<String>{
+        let mut paths = self.search_path.clone();
 
+        if let Some(current) = current_directory{
+            paths.push(ValueWithPriority::new(
+                fs::canonicalize(current)
+                .unwrap().into_os_string().into_string().unwrap()
+                ,100));
+        }
 
+        let mut paths = paths.into_sorted_vec();
+        paths.reverse();
 
+        let mut suffixes = self.suffixes.clone().into_sorted_vec();
+        suffixes.reverse();
 
-    }
+        for path in paths{
+            let mut path = PathBuf::from(path.value.clone());
+            path.push(request.clone());
+            for suffix in suffixes.iter(){
+                path.set_extension(suffix.value.clone());
+                if path.exists(){
+                    path.canonicalize().unwrap();
+                    return Some(path.into_os_string().into_string().unwrap());
+                }
+            }
+        }
 
-    fn load(&self,request:ModuleRequest) -> Result<Script,crate::error::Error>{
-
+        return None;
     }
 }
