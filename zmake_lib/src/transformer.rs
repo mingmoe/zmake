@@ -1,32 +1,35 @@
-
+use crate::error::Error;
 use std::sync::Arc;
 use swc::Compiler;
 use swc_common::errors::{ColorConfig, Handler};
 use swc_common::{FileName, SourceMap};
-use crate::error::Error;
-
+use crate::ScriptType;
 use crate::Script;
 
-pub struct Transformer{
-    compiler : Compiler,
-    source_map: Arc<SourceMap>
+pub struct Transformer {
+    compiler: Compiler,
+    source_map: Arc<SourceMap>,
 }
 
-impl Transformer{
-    pub fn default() -> Transformer{
+impl Transformer {
+    pub fn default() -> Transformer {
         let source_map = Arc::<SourceMap>::default();
         let compiler = swc::Compiler::new(source_map.clone());
 
-        Transformer{
+        Transformer {
             compiler,
-            source_map
+            source_map,
         }
     }
 
-    pub fn transpile(&self,script:Script) -> Result<Script,Error>{
+    pub fn transpile(&self, script: Script) -> Result<Script, Error> {
         // https://github.com/swc-project/swc/discussions/4126
+        if script.text_type == ScriptType::Ecmascript{
+            return Ok(script);
+        }
+
         let globals = swc_common::Globals::new();
-        swc_common::GLOBALS.set(&globals,||{
+        swc_common::GLOBALS.set(&globals, || {
             let handler = Handler::with_tty_emitter(
                 ColorConfig::Auto,
                 true,
@@ -34,11 +37,10 @@ impl Transformer{
                 Some(self.source_map.clone()),
             );
 
-            let fm = self
-                .source_map
-                .new_source_file(
-                    FileName::Custom(script.path.as_ref().unwrap().clone()).into(),
-                    script.get_text());
+            let fm = self.source_map.new_source_file(
+                FileName::Custom(script.path.as_ref().unwrap().clone()).into(),
+                script.get_text(),
+            );
 
             let cfg_json = format!(
                 r#"
@@ -73,13 +75,14 @@ impl Transformer{
               }}
             }}
 
-        "#);
+        "#
+            );
 
-            let cfg = serde_json::from_str(cfg_json.as_str())
-                .map_err(|e| Error::TransformeError {
-                    script:Script::from_ecmascript(Some(cfg_json),None),
-                    reason: e.to_string()
-                 })?;
+            let cfg =
+                serde_json::from_str(cfg_json.as_str()).map_err(|e| Error::TransformeError {
+                    script: Script::from_ecmascript(Some(cfg_json), None),
+                    reason: e.to_string(),
+                })?;
 
             let ops = swc::config::Options {
                 config: cfg,
@@ -89,11 +92,11 @@ impl Transformer{
             let res = self.compiler.process_js_file(fm, &handler, &ops);
 
             match res {
-                Ok(to) => Ok(script.to_transformed(to.code,to.map)),
-                Err(e) => Err(Error::TransformeError { 
-                    script:script,
-                    reason: e.to_string()
-                 }),
+                Ok(to) => Ok(script.to_transformed(to.code, to.map)),
+                Err(e) => Err(Error::TransformeError {
+                    script: script,
+                    reason: e.to_string(),
+                }),
             }
         })
     }

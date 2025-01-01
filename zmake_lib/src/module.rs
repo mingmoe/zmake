@@ -1,45 +1,57 @@
 use crate::{Script, ValueWithPriority};
-use std::fs;
-use std::path::PathBuf;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::fs;
+use std::path::PathBuf;
 
 pub static DEFAULT_MODULE_DIRECTORY: &str = "modules";
 
-#[derive(Debug,Clone)]
-pub struct ModuleFinder{
+#[derive(Debug, Clone)]
+pub struct ModuleFinder {
     /// make sure they are absolutely path
-    search_path:BinaryHeap<ValueWithPriority<String>>,
-    suffixes:BinaryHeap<ValueWithPriority<String>>
+    search_path: BinaryHeap<ValueWithPriority<String>>,
+    suffixes: BinaryHeap<ValueWithPriority<String>>,
 }
 
-impl ModuleFinder{
-    pub fn new(home_directory:String) -> ModuleFinder{
-        let mut paths : BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
+impl ModuleFinder {
+    pub fn new(home_directory: String) -> ModuleFinder {
+        let mut paths: BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
         let home = PathBuf::from(home_directory).canonicalize().unwrap();
-        
-        paths.push(ValueWithPriority::new(home.join(DEFAULT_MODULE_DIRECTORY).into_os_string().into_string().unwrap(),0));
 
-        let mut suffixes : BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
-        suffixes.push(ValueWithPriority::new(".ts".to_string(),100));
-        suffixes.push(ValueWithPriority::new( ".mts".to_string(),90));
-        suffixes.push(ValueWithPriority::new( ".js".to_string(),80));
-        suffixes.push( ValueWithPriority::new(".mts".to_string(),70));
+        paths.push(ValueWithPriority::new(
+            home.join(DEFAULT_MODULE_DIRECTORY)
+                .into_os_string()
+                .into_string()
+                .unwrap(),
+            0,
+        ));
 
-        return ModuleFinder{
+        let mut suffixes: BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
+        // typescript type
+        suffixes.push(ValueWithPriority::new(".ts".to_string(), 100));
+        suffixes.push(ValueWithPriority::new(".mts".to_string(), 90));
+        // ecmascript type
+        suffixes.push(ValueWithPriority::new(".js".to_string(), 80));
+        suffixes.push(ValueWithPriority::new(".mts".to_string(), 70));
+
+        return ModuleFinder {
             search_path: paths,
-            suffixes
-        }
+            suffixes,
+        };
     }
 
-    pub fn find(&self,current_directory:Option<String>,request:String)->Option<String>{
+    pub fn find(&self, current_directory: Option<String>, request: String) -> Option<String> {
         let mut paths = self.search_path.clone();
 
-        if let Some(current) = current_directory{
+        if let Some(current) = current_directory {
             paths.push(ValueWithPriority::new(
                 fs::canonicalize(current)
-                .unwrap().into_os_string().into_string().unwrap()
-                ,100));
+                    .unwrap()
+                    .into_os_string()
+                    .into_string()
+                    .unwrap(),
+                100,
+            ));
         }
 
         let mut paths = paths.into_sorted_vec();
@@ -48,12 +60,12 @@ impl ModuleFinder{
         let mut suffixes = self.suffixes.clone().into_sorted_vec();
         suffixes.reverse();
 
-        for path in paths{
+        for path in paths {
             let mut path = PathBuf::from(path.value.clone());
             path.push(request.clone());
-            for suffix in suffixes.iter(){
+            for suffix in suffixes.iter() {
                 path.set_extension(suffix.value.clone());
-                if path.exists(){
+                if path.exists() {
                     path.canonicalize().unwrap();
                     return Some(path.into_os_string().into_string().unwrap());
                 }
