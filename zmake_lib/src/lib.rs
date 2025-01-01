@@ -2,7 +2,7 @@ pub mod engine;
 pub mod error;
 pub mod finder;
 pub mod loader;
-pub mod module;
+pub mod modules;
 pub mod options;
 pub mod transformer;
 pub use futures;

@@ -26,7 +26,7 @@ impl Engine {
             .memory_limit(1024 * 1024 * 16)
             .max_stack_size(1024 * 1024)
             .script_module_loader(ModuleLoader::new(options.clone(), transformer.clone()))
-            .native_module_loader(crate::module::NativeModule::new(options.clone()))
+            .native_module_loader(crate::modules::ConfigurationModule::new(options.clone()))
             .build();
 
         quickjs_runtime::features::init(&runtime).unwrap();

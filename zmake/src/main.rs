@@ -4,7 +4,6 @@ use clap::Parser;
 use tracing::{info, trace};
 use zmake_lib::futures::executor::block_on;
 use zmake_lib::options::Options;
-use zmake_lib::quickjs_runtime::builder::QuickJsRuntimeBuilder;
 use zmake_lib::quickjs_runtime::jsutils::Script as JScript;
 use zmake_lib::{engine::Engine, transformer::Transformer, Script};
 

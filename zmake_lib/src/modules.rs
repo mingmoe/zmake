@@ -8,19 +8,20 @@ use quickjs_runtime::quickjsrealmadapter::QuickJsRealmAdapter;
 use quickjs_runtime::quickjsvalueadapter::QuickJsValueAdapter;
 use quickjs_runtime::reflection::Proxy;
 
-pub struct NativeModule {
+/// implements the `zmake:configuration`` module
+pub struct ConfigurationModule {
     options: Options,
 }
 
-impl NativeModule {
-    pub fn new(options: Options) -> NativeModule {
-        NativeModule { options }
+impl ConfigurationModule {
+    pub fn new(options: Options) -> ConfigurationModule {
+        ConfigurationModule { options }
     }
 }
 
-impl NativeModuleLoader for NativeModule {
+impl NativeModuleLoader for ConfigurationModule {
     fn has_module(&self, _q_ctx: &QuickJsRealmAdapter, module_name: &str) -> bool {
-        module_name.eq("zmake")
+        module_name.eq("zmake:configuration")
     }
 
     fn get_module_export_names(
