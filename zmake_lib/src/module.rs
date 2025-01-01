@@ -1,77 +1,83 @@
-use crate::{Script, ValueWithPriority};
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
-use std::fs;
-use std::path::PathBuf;
+use crate::options::Options;
+use quickjs_runtime::builder::QuickJsRuntimeBuilder;
+use quickjs_runtime::jsutils::modules::NativeModuleLoader;
+use quickjs_runtime::jsutils::Script;
+use quickjs_runtime::quickjs_utils::functions;
+use quickjs_runtime::quickjs_utils::primitives::{from_i32, from_string};
+use quickjs_runtime::quickjsrealmadapter::QuickJsRealmAdapter;
+use quickjs_runtime::quickjsvalueadapter::QuickJsValueAdapter;
+use quickjs_runtime::reflection::Proxy;
 
-pub static DEFAULT_MODULE_DIRECTORY: &str = "modules";
-
-#[derive(Debug, Clone)]
-pub struct ModuleFinder {
-    /// make sure they are absolutely path
-    search_path: BinaryHeap<ValueWithPriority<String>>,
-    suffixes: BinaryHeap<ValueWithPriority<String>>,
+pub struct NativeModule {
+    options: Options,
 }
 
-impl ModuleFinder {
-    pub fn new(home_directory: String) -> ModuleFinder {
-        let mut paths: BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
-        let home = PathBuf::from(home_directory).canonicalize().unwrap();
+impl NativeModule {
+    pub fn new(options: Options) -> NativeModule {
+        NativeModule { options }
+    }
+}
 
-        paths.push(ValueWithPriority::new(
-            home.join(DEFAULT_MODULE_DIRECTORY)
-                .into_os_string()
-                .into_string()
-                .unwrap(),
-            0,
-        ));
-
-        let mut suffixes: BinaryHeap<ValueWithPriority<String>> = BinaryHeap::new();
-        // typescript type
-        suffixes.push(ValueWithPriority::new(".ts".to_string(), 100));
-        suffixes.push(ValueWithPriority::new(".mts".to_string(), 90));
-        // ecmascript type
-        suffixes.push(ValueWithPriority::new(".js".to_string(), 80));
-        suffixes.push(ValueWithPriority::new(".mts".to_string(), 70));
-
-        return ModuleFinder {
-            search_path: paths,
-            suffixes,
-        };
+impl NativeModuleLoader for NativeModule {
+    fn has_module(&self, _q_ctx: &QuickJsRealmAdapter, module_name: &str) -> bool {
+        module_name.eq("zmake")
     }
 
-    pub fn find(&self, current_directory: Option<String>, request: String) -> Option<String> {
-        let mut paths = self.search_path.clone();
+    fn get_module_export_names(
+        &self,
+        _q_ctx: &QuickJsRealmAdapter,
+        _module_name: &str,
+    ) -> Vec<&str> {
+        vec![
+            "workingDirectory",
+            "cacheDirectory",
+            "zmakeDirectory",
+            "debug",
+        ]
+    }
 
-        if let Some(current) = current_directory {
-            paths.push(ValueWithPriority::new(
-                fs::canonicalize(current)
-                    .unwrap()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap(),
-                100,
-            ));
-        }
+    fn get_module_exports(
+        &self,
+        q_ctx: &QuickJsRealmAdapter,
+        _module_name: &str,
+    ) -> Vec<(&str, QuickJsValueAdapter)> {
+        let mut exports: Vec<(&str, QuickJsValueAdapter)> = Vec::new();
 
-        let mut paths = paths.into_sorted_vec();
-        paths.reverse();
+        exports.push((
+            "workingDirectory",
+            q_ctx
+                .create_string(&self.options.working_directory)
+                .unwrap(),
+        ));
+        exports.push((
+            "cacheDirectory",
+            q_ctx.create_string(&self.options.cache_directory).unwrap(),
+        ));
+        exports.push((
+            "zmakeDirectory",
+            q_ctx.create_string(&self.options.zmake_directory).unwrap(),
+        ));
+        exports.push(("debug", q_ctx.create_boolean(self.options.debug).unwrap()));
 
-        let mut suffixes = self.suffixes.clone().into_sorted_vec();
-        suffixes.reverse();
+        let js_func = functions::new_function_q(
+            q_ctx,
+            "someFunc",
+            |_q_ctx, _this, _args| {
+                return Ok(from_i32(432));
+            },
+            0,
+        )
+        .ok()
+        .unwrap();
+        let js_class = Proxy::new()
+            .name("SomeClass")
+            .static_method("doIt", |_rt, _q_ctx, _args| {
+                return Ok(from_i32(185));
+            })
+            .install(q_ctx, false)
+            .ok()
+            .unwrap();
 
-        for path in paths {
-            let mut path = PathBuf::from(path.value.clone());
-            path.push(request.clone());
-            for suffix in suffixes.iter() {
-                path.set_extension(suffix.value.clone());
-                if path.exists() {
-                    path.canonicalize().unwrap();
-                    return Some(path.into_os_string().into_string().unwrap());
-                }
-            }
-        }
-
-        return None;
+        exports
     }
 }

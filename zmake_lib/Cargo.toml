@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-quickjs_runtime = {git="https://github.com/HiRoFa/quickjs_es_runtime", features=["quickjs-ng"], default-features=false}
+quickjs_runtime = {git="https://github.com/HiRoFa/quickjs_es_runtime", features=["quickjs-ng","console", "setimmediate", "setinterval", "settimeout"], default-features=false}
 swc_common = { version = "5.0.0",features=["tty-emitter"] }
 swc = "9.0.1"
 serde = "1.0.217"
@@ -14,3 +14,4 @@ highway = "1.2.0"
 bytemuck = "1.21.0"
 futures = "0.3.31"
 tracing = "0.1.41"
+strfmt = "0.2.4"

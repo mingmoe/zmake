@@ -1,9 +1,10 @@
 pub mod engine;
 pub mod error;
+pub mod finder;
 pub mod loader;
 pub mod module;
+pub mod options;
 pub mod transformer;
-use core::panic;
 pub use futures;
 use highway::{HighwayHash, HighwayHasher};
 pub use quickjs_runtime;
@@ -16,6 +17,8 @@ pub enum ScriptType {
     Ecmascript,
     Typescript,
 }
+
+pub static START_SCRIPT: &str = include_str!("built-in.js");
 
 /// 代表一个Javascript/Typescript脚本
 #[derive(Debug, Clone)]
@@ -86,17 +89,13 @@ impl Script {
     }
 }
 
-pub fn create_script_cache(origin_text:String,transformed_text:String)->String{
+pub fn create_script_cache(origin_text: String, transformed_text: String) -> String {
     let hash = hash256_to_string(HighwayHasher::default().hash256(origin_text.as_bytes()));
 
-    format!(
-        "//origin file hash:{}\n{}",
-        hash,
-        transformed_text
-    )
+    format!("//origin file hash:{}\n{}", hash, transformed_text)
 }
 
-pub fn check_script_cache_valid(origin_text:&str,transformed_text_cache:&str) -> bool{
+pub fn check_script_cache_valid(origin_text: &str, transformed_text_cache: &str) -> bool {
     let hash = hash256_to_string(HighwayHasher::default().hash256(origin_text.as_bytes()));
 
     let to_match = format!("//origin file hash:{}", hash);
@@ -165,4 +164,9 @@ fn hash256_to_string(x: [u64; 4]) -> String {
     let target: [u8; 32] = bytemuck::cast(x);
 
     return target.iter().map(|byte| format!("{:02X}", byte)).collect();
+}
+
+fn get_absolute_path(path: &str) -> String {
+    let absolute_path = std::fs::canonicalize(path).unwrap();
+    return absolute_path.to_str().unwrap().to_string();
 }

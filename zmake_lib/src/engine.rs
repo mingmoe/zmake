@@ -1,7 +1,7 @@
-use std::fs;
 use std::sync::Arc;
-use std::{rc::Rc, u64};
 
+use crate::get_absolute_path;
+use crate::options::Options;
 use crate::transformer::Transformer;
 use crate::{loader::ModuleLoader, transformer};
 use quickjs_runtime::{builder::QuickJsRuntimeBuilder, facades::QuickJsRuntimeFacade};
@@ -12,35 +12,24 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(home: String, working_dir: String, cache_dir: String) -> Engine {
-        let transformer = Arc::new(transformer::Transformer::default());
+    pub fn new(options: Options) -> Engine {
+        // check options
+        let mut options = options;
+        options.zmake_directory = get_absolute_path(&options.zmake_directory);
+        options.working_directory = get_absolute_path(&options.working_directory);
+        options.cache_directory = get_absolute_path(&options.cache_directory);
 
-        let home = fs::canonicalize(home)
-            .unwrap()
-            .into_os_string()
-            .into_string()
-            .unwrap();
-        let working_dir = fs::canonicalize(working_dir)
-            .unwrap()
-            .into_os_string()
-            .into_string()
-            .unwrap();
-        let cache_dir = fs::canonicalize(cache_dir)
-            .unwrap()
-            .into_os_string()
-            .into_string()
-            .unwrap();
+        // create runtime
+        let transformer = Arc::new(transformer::Transformer::default());
 
         let runtime = QuickJsRuntimeBuilder::new()
             .memory_limit(1024 * 1024 * 16)
             .max_stack_size(1024 * 1024)
-            .script_module_loader(ModuleLoader::new(
-                home,
-                working_dir,
-                cache_dir,
-                transformer.clone(),
-            ))
+            .script_module_loader(ModuleLoader::new(options.clone(), transformer.clone()))
+            .native_module_loader(crate::module::NativeModule::new(options.clone()))
             .build();
+
+        quickjs_runtime::features::init(&runtime).unwrap();
 
         return Engine {
             runtime,
