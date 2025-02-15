@@ -1,0 +1,30 @@
+{
+    "minify": false,
+    "sourceMaps": true,
+    "module": {
+          "type": "es6",
+          "strict": true,
+          "strictMode": true,
+          "lazy": false,
+          "noInterop": false,
+          "ignoreDynamic": true
+      },
+    "jsc": {
+      "externalHelpers": false,
+      "parser": {
+        "syntax": "typescript",
+        "jsx": false,
+        "tsx": false,
+        "decorators": true,
+        "decoratorsBeforeExport": true,
+        "dynamicImport": true,
+        "preserveAllComments": false
+      },
+      "transform": {
+        "legacyDecorator": true,
+        "decoratorMetadata": true
+      },
+      "target": "es2022",
+      "keepClassNames": true
+    }
+}

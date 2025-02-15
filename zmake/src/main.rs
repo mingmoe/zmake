@@ -1,17 +1,21 @@
 use std::fs;
 
 use clap::Parser;
-use tracing::{info, trace};
+use tracing::{info, trace,error};
+use zmake_lib::config::Options;
 use zmake_lib::futures::executor::block_on;
-use zmake_lib::options::Options;
 use zmake_lib::quickjs_runtime::jsutils::Script as JScript;
 use zmake_lib::{engine::Engine, transformer::Transformer, Script};
+use zmake_lib::quickjs_runtime::values::JsValueFacade;
 
 #[derive(Parser, Debug)]
 #[command(version, about = "a tool to manage source code(download,compile,install and so on)", long_about = None)]
 struct Args {
     #[arg(short, long)]
-    working_directory: Option<String>,
+    source_directory: String,
+
+    #[arg(short, long)]
+    binary_directory: String,
 
     #[arg(long)]
     zmake_directory: String,
@@ -26,7 +30,12 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let working_directory = fs::canonicalize(args.working_directory.as_deref().unwrap_or("."))
+    let source_directory = fs::canonicalize(args.source_directory)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let binary_directory = fs::canonicalize(args.binary_directory)
         .unwrap()
         .to_str()
         .unwrap()
@@ -64,8 +73,9 @@ fn main() {
 
     let options = Options {
         zmake_directory: zmake_directory.clone(),
-        working_directory: working_directory.clone(),
+        source_directory: source_directory.clone(),
         cache_directory: cache_directory.clone(),
+        binary_directory: binary_directory.clone(),
         debug: args.debug,
     };
 
@@ -80,10 +90,19 @@ fn main() {
         })
         .unwrap();
 
-    let my_script = JScript::new(
-        &format!("{}/./_built_in_fake_file_in_memory_.ts", &working_directory),
+    let startup_script = JScript::new(
+        &format!("{}/./_built_in_fake_file_in_memory_.ts", &source_directory),
         zmake_lib::START_SCRIPT,
     );
 
-    block_on(engine.runtime.eval_module(None, my_script)).unwrap();
+    let jsvf = block_on(engine.runtime.eval_module(None, startup_script)).unwrap();
+    if let JsValueFacade::JsPromise { cached_promise } = jsvf {
+        let result = block_on(cached_promise.get_promise_result()).unwrap().unwrap();
+        let result = block_on(result.to_serde_value());
+
+        match result{
+            Ok(v)=>trace!("eval_module result:{:?}",v),
+            Err(e)=>error!("eval_module result with error:{:?}",e),
+        }        
+    }
 }

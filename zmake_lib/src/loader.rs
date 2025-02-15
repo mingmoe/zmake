@@ -1,4 +1,4 @@
-use crate::options::Options;
+use crate::config::Options;
 use crate::transformer::Transformer;
 use crate::{check_script_cache_valid, create_script_cache, Script};
 use quickjs_runtime::jsutils::modules::ScriptModuleLoader;
@@ -28,7 +28,7 @@ impl ModuleLoader {
     }
 
     pub fn get_cached_file_path(&self, path: &str) -> Option<String> {
-        let working_dir = PathBuf::from(&self.options.working_directory);
+        let working_dir = PathBuf::from(&self.options.source_directory);
         let path = PathBuf::from(path);
         let suffix = path.strip_prefix(&working_dir);
 

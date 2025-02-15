@@ -1,4 +1,4 @@
-use crate::options::Options;
+use crate::config::Options;
 use quickjs_runtime::builder::QuickJsRuntimeBuilder;
 use quickjs_runtime::jsutils::modules::NativeModuleLoader;
 use quickjs_runtime::jsutils::Script;
@@ -30,7 +30,8 @@ impl NativeModuleLoader for ConfigurationModule {
         _module_name: &str,
     ) -> Vec<&str> {
         vec![
-            "workingDirectory",
+            "sourceDirectory",
+            "binaryDirectory",
             "cacheDirectory",
             "zmakeDirectory",
             "debug",
@@ -45,10 +46,12 @@ impl NativeModuleLoader for ConfigurationModule {
         let mut exports: Vec<(&str, QuickJsValueAdapter)> = Vec::new();
 
         exports.push((
-            "workingDirectory",
-            q_ctx
-                .create_string(&self.options.working_directory)
-                .unwrap(),
+            "sourceDirectory",
+            q_ctx.create_string(&self.options.source_directory).unwrap(),
+        ));
+        exports.push((
+            "binaryDirectory",
+            q_ctx.create_string(&self.options.binary_directory).unwrap(),
         ));
         exports.push((
             "cacheDirectory",
@@ -60,16 +63,6 @@ impl NativeModuleLoader for ConfigurationModule {
         ));
         exports.push(("debug", q_ctx.create_boolean(self.options.debug).unwrap()));
 
-        let js_func = functions::new_function_q(
-            q_ctx,
-            "someFunc",
-            |_q_ctx, _this, _args| {
-                return Ok(from_i32(432));
-            },
-            0,
-        )
-        .ok()
-        .unwrap();
         let js_class = Proxy::new()
             .name("SomeClass")
             .static_method("doIt", |_rt, _q_ctx, _args| {

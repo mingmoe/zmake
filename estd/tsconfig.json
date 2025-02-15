@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "alwaysStrict": true,
+        "allowJs": true,
+        "module":"ES2022",
+        "noResolve":true,
+        "target": "ES2022",
+        "rootDir": "./src",
+        "outDir": "./src",
+        "skipLibCheck": true,
+        "noImplicitAny": false,
+        "declaration": true,
+        "declarationDir": "./declarations"
+    },
+    "files": [
+        "src/estd.fs.ts",
+
+  ]
+}

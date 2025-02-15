@@ -1,9 +1,9 @@
+pub mod config;
 pub mod engine;
 pub mod error;
 pub mod finder;
 pub mod loader;
 pub mod modules;
-pub mod options;
 pub mod transformer;
 pub use futures;
 use highway::{HighwayHash, HighwayHasher};

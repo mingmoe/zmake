@@ -18,43 +18,9 @@ impl Transformer {
         let source_map = Arc::<SourceMap>::default();
         let compiler = swc::Compiler::new(source_map.clone());
 
-        let cfg_json = format!(
-            r#"
-        {{
-          "minify": false,
-          "sourceMaps": true,
-          "module": {{
-                "type": "es6",
-                "strict": true,
-                "strictMode": true,
-                "lazy": false,
-                "noInterop": false,
-                "ignoreDynamic": true
-            }},
-          "jsc": {{
-            "externalHelpers": false,
-            "parser": {{
-              "syntax": "typescript",
-              "jsx": false,
-              "tsx": false,
-              "decorators": true,
-              "decoratorsBeforeExport": true,
-              "dynamicImport": true,
-              "preserveAllComments": false
-            }},
-            "transform": {{
-              "legacyDecorator": true,
-              "decoratorMetadata": true
-            }},
-            "target": "es2022",
-            "keepClassNames": true
-          }}
-        }}
+        let cfg_json = include_str!("swc.json");
 
-    "#
-        );
-
-        let config: Config = serde_json::from_str(cfg_json.as_str()).unwrap();
+        let config: Config = serde_json::from_str(cfg_json).unwrap();
 
         let options = swc::config::Options {
             config: config,

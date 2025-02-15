@@ -1,0 +1,11 @@
+[package]
+name = "estd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+quickjs_runtime = {git="https://github.com/HiRoFa/quickjs_es_runtime", features=["quickjs-ng","console", "setimmediate", "setinterval", "settimeout"], default-features=false}
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+tar = "0.4"
+zip = "2.2.2"
