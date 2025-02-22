@@ -1,12 +1,12 @@
 use std::fs;
 
 use clap::Parser;
-use tracing::{info, trace,error};
+use tracing::{error, info, trace};
 use zmake_lib::config::Options;
 use zmake_lib::futures::executor::block_on;
 use zmake_lib::quickjs_runtime::jsutils::Script as JScript;
-use zmake_lib::{engine::Engine, transformer::Transformer, Script};
 use zmake_lib::quickjs_runtime::values::JsValueFacade;
+use zmake_lib::engine::Engine;
 
 #[derive(Parser, Debug)]
 #[command(version, about = "a tool to manage source code(download,compile,install and so on)", long_about = None)]
@@ -83,7 +83,7 @@ fn main() {
 
     engine
         .runtime
-        .set_function(&["console"], "log", |ctx, args| {
+        .set_function(&["console"], "log", |_ctx, args| {
             let a = args[0].get_str().to_string();
             info!("{}", a.trim());
             return Ok(zmake_lib::quickjs_runtime::values::JsValueFacade::Null);
@@ -97,12 +97,14 @@ fn main() {
 
     let jsvf = block_on(engine.runtime.eval_module(None, startup_script)).unwrap();
     if let JsValueFacade::JsPromise { cached_promise } = jsvf {
-        let result = block_on(cached_promise.get_promise_result()).unwrap().unwrap();
+        let result = block_on(cached_promise.get_promise_result())
+            .unwrap()
+            .unwrap();
         let result = block_on(result.to_serde_value());
 
-        match result{
-            Ok(v)=>trace!("eval_module result:{:?}",v),
-            Err(e)=>error!("eval_module result with error:{:?}",e),
-        }        
+        match result {
+            Ok(v) => trace!("eval_module result:{:?}", v),
+            Err(e) => error!("eval_module result with error:{:?}", e),
+        }
     }
 }

@@ -1,20 +1,18 @@
-
+mod compress;
 mod fs;
 mod net;
-mod compress;
 
-use std::vec;
-use std::future::Future;
-use quickjs_runtime::values::JsValueFacade;
+use compress::{CompressNativeModule, CompressScriptModule};
 use fs::{FsNativeModule, FsScriptModule};
 use quickjs_runtime::builder::QuickJsRuntimeBuilder;
 use quickjs_runtime::jsutils::modules::NativeModuleLoader;
 use quickjs_runtime::quickjsrealmadapter::QuickJsRealmAdapter;
 use quickjs_runtime::quickjsvalueadapter::QuickJsValueAdapter;
-use quickjs_runtime::jsutils::JsError;
+use std::vec;
 
 pub struct EstdModule {
     pub enabled_fs: bool,
+    pub enabled_compress: bool,
 }
 
 impl NativeModuleLoader for EstdModule {
@@ -38,6 +36,7 @@ impl NativeModuleLoader for EstdModule {
         let mut exports: Vec<(&str, QuickJsValueAdapter)> = Vec::new();
 
         let enabled_fs = self.enabled_fs;
+        let enabled_compress = self.enabled_compress;
 
         // should be a constant value,move it
         exports.push((
@@ -45,10 +44,11 @@ impl NativeModuleLoader for EstdModule {
             q_ctx
                 .create_function(
                     "hasModule",
-                    move |realm, this, vec| {
+                    move |realm, _this, vec| {
                         let module_name = vec[0].to_string().unwrap();
                         let result = match &*module_name {
                             "fs" => enabled_fs,
+                            "compress" => enabled_compress,
                             "console" => true,
                             _ => false,
                         };
@@ -63,15 +63,28 @@ impl NativeModuleLoader for EstdModule {
     }
 }
 
-pub fn init(builder: QuickJsRuntimeBuilder, enable_fs: bool) -> QuickJsRuntimeBuilder {
+pub fn init(
+    builder: QuickJsRuntimeBuilder,
+    enable_fs: bool,
+    enable_compress: bool,
+) -> QuickJsRuntimeBuilder {
     let module = EstdModule {
         enabled_fs: enable_fs,
+        enabled_compress: enable_compress,
     };
 
     let mut builder = builder.native_module_loader(module);
 
     if enable_fs {
-        builder = builder.native_module_loader(FsNativeModule{}).script_module_loader(FsScriptModule{});
+        builder = builder
+            .native_module_loader(FsNativeModule {})
+            .script_module_loader(FsScriptModule {});
+    }
+
+    if enable_compress {
+        builder = builder
+            .native_module_loader(CompressNativeModule {})
+            .script_module_loader(CompressScriptModule {});
     }
 
     builder

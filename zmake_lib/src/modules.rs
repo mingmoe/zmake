@@ -1,12 +1,7 @@
 use crate::config::Options;
-use quickjs_runtime::builder::QuickJsRuntimeBuilder;
 use quickjs_runtime::jsutils::modules::NativeModuleLoader;
-use quickjs_runtime::jsutils::Script;
-use quickjs_runtime::quickjs_utils::functions;
-use quickjs_runtime::quickjs_utils::primitives::{from_i32, from_string};
 use quickjs_runtime::quickjsrealmadapter::QuickJsRealmAdapter;
 use quickjs_runtime::quickjsvalueadapter::QuickJsValueAdapter;
-use quickjs_runtime::reflection::Proxy;
 
 /// implements the `zmake:configuration`` module
 pub struct ConfigurationModule {
@@ -21,7 +16,7 @@ impl ConfigurationModule {
 
 impl NativeModuleLoader for ConfigurationModule {
     fn has_module(&self, _q_ctx: &QuickJsRealmAdapter, module_name: &str) -> bool {
-        module_name.eq("zmake:configuration")
+        module_name.eq("zmake.configuration")
     }
 
     fn get_module_export_names(
@@ -62,15 +57,6 @@ impl NativeModuleLoader for ConfigurationModule {
             q_ctx.create_string(&self.options.zmake_directory).unwrap(),
         ));
         exports.push(("debug", q_ctx.create_boolean(self.options.debug).unwrap()));
-
-        let js_class = Proxy::new()
-            .name("SomeClass")
-            .static_method("doIt", |_rt, _q_ctx, _args| {
-                return Ok(from_i32(185));
-            })
-            .install(q_ctx, false)
-            .ok()
-            .unwrap();
 
         exports
     }

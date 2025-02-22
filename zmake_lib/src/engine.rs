@@ -29,7 +29,7 @@ impl Engine {
             .script_module_loader(ModuleLoader::new(options.clone(), transformer.clone()))
             .native_module_loader(crate::modules::ConfigurationModule::new(options.clone()));
 
-        let builder = init(builder, true);
+        let builder = init(builder, true, true);
 
         let runtime = builder.build();
 

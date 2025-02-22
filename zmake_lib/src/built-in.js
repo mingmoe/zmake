@@ -1,5 +1,5 @@
 
-import * as zmake from "zmake:configuration";
+import * as zmake from "zmake.configuration";
 
 if(zmake.debug){
     console.trace("zmake.debug == true")

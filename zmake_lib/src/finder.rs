@@ -1,7 +1,7 @@
 use crate::ValueWithPriority;
 use std::collections::BinaryHeap;
-use std::fs;
 use std::path::PathBuf;
+use std::fs;
 use tracing::debug;
 
 pub static DEFAULT_MODULE_DIRECTORY: &str = "modules";
@@ -49,14 +49,18 @@ impl ModuleFinder {
         let mut paths = self.search_path.clone();
 
         if let Some(current) = current_directory {
-            paths.push(ValueWithPriority::new(
-                fs::canonicalize(current)
-                    .unwrap()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap(),
-                100,
-            ));
+            if fs::exists(&current).unwrap() {
+                paths.push(ValueWithPriority::new(
+                    fs::canonicalize(current)
+                        .unwrap()
+                        .into_os_string()
+                        .into_string()
+                        .unwrap(),
+                    100,
+                ));
+            } else {
+                debug!("ignore inalid current path:{}", current);
+            }
         }
 
         let mut paths = paths.into_sorted_vec();

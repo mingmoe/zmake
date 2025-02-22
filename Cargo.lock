@@ -625,6 +625,7 @@ dependencies = [
  "reqwest",
  "tar",
  "tokio",
+ "tracing",
  "zip",
 ]
 
